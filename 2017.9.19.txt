@@ -3,4 +3,48 @@
 2.对3s和毕设相关有了新的修改方向包括：
   a.增加对网络质量（节点间发送速率的监测）的评估
   b.更改UI，现在不友好，准备在开始卸载之后能进入新页面。
+3.【推荐】防止NPE，是程序员的基本修养，注意NPE产生的场景：
+ 1） 返回类型为基本数据类型，return包装数据类型的对象时，自动拆箱有可能产生NPE。
+  反例：public int f(){ return Integer对象}，如果为null，自动解箱抛NPE。
+
+ 关于自动装箱拆箱知识点：
+自动装箱其实就是编译器自动添加valueOf（）函数，以Integer为例
+    public static Integer valueOf(int i) {
+        if (i >= IntegerCache.low && i <= IntegerCache.high)
+            return IntegerCache.cache[i + (-IntegerCache.low)];
+        return new Integer(i);
+    }
+当装箱值为-128-127之间时是从cache里取出来的用==判断可以为true但是注意下面两个例子区别
+ // Example 1: special case - arises due to autoboxing in Java
+        Integer obj1 = 1; // autoboxing will call Integer.valueOf()
+        Integer obj2 = 1; // same call to Integer.valueOf() will return same
+                            // cached Object
+ 
+        System.out.println("obj1 == obj2 : " + (obj1 == obj2)); // true
+ 
+        // Example 2: equality operator - pure object comparison
+        Integer one = new Integer(1); // no autoboxing
+        Integer anotherOne = new Integer(1);
+        System.out.println("one == anotherOne : " + (one == anotherOne)); // false
+第2个例子其实就是新分配了两个空间，没有触发valueOf的装箱，所以没有从cache中取数这个步骤。
+自动拆箱实际就是调用XXXValue（）函数，举例inValue
+public int intValue() {
+        return value;
+    }
+就是返回一个int，因为Integer主要就是为了能让基本类型能够放入集合中。
+针对1）中的反例，就是因为在拆箱的时候空对象调用了intValue（）导致了NPE。
+
+ 2） 数据库的查询结果可能为null。
+ 3） 集合里的元素即使isNotEmpty，取出的数据元素也可能为null。
+      例如HashSet可以添加一个null元素进去。加入的元素为null。
+ 4） 远程调用返回对象时，一律要求空指针判断，防止NPE。
+ 5） 对于session中获取的数据，建议NPE检查，避免空指针。
+ 6） 级联调用obj.getA().getB().getC()；易产生NPE。
+     链式调用虽然意思清晰，但是有中间环节get出错无法处理的危险。
+  小总结：对于程序外部调用，比如RPC session 数据库等要注意结果为null，此外对于链式调用和其他（自动装箱拆箱、集合isnotempty）也要注意。
+4.PECS (Producer Extends Consumer Super)原则：1）频繁往外读取内容的，适合用上界Extends。2）经常往里插入的，适合用下界Super。
+
+之后要完成的事情：
+1.期刊学报修改。
+2.根据3s的两个意见修改。
 
