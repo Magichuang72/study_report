@@ -21,5 +21,33 @@ c.必须回收自定义的ThreadLocal变量，尤其在线程池场景下，线�
 
 ThreadLocal相关知识点：其实就是通过Thread内部维护一个ThreadLocalMap来实现变量线程私有化。需要注意的是Entry为弱引用。其中只有在每次set，get的时候才会对entry做key==null的判断，从而释放内存，所以可能使大对象在内存中存活很长一段时间，从而占用内存。所以，我们在使用完ThreadLocal里的对象后最好能手动remove一下，或者至少调用下ThreadLocal.set(null)。因为由于线程池对线程的调度，一个线程可能是长期存活对象，从而导致一直有threadLocalMap的强引用，导致内存泄露。（这些都是目前的理解之后还要加深理解）
 
+不要在foreach循环里进行元素的remove/add操作。remove元素请使用Iterator方式，如果并发操作，需要对Iterator对象加锁。
+反例：
+
+List<String> list = new ArrayList<String>();
+list.add("1");
+list.add("2");
+for (String item : list) {
+    if ("1".equals(item)) {
+        list.remove(item);
+    }
+}
+说明：上述代码的执行结果肯定会出乎大家的意料，那么试一下把“1”换成“2”，会是同样的结果吗？
+（关于倒数第二个删除一定不会报错，在remove之后）
+因为
+ public boolean hasNext() {
+            return cursor != size;
+        }
+在倒数第二个删除之后cursor=size--所以直接没有hasnext了。
+正例：
+Iterator<String> iterator = list.iterator();
+while (iterator.hasNext()) {
+    String item = iterator.next();
+    if (删除元素的条件) {
+        iterator.remove();
+    }
+}
+
+Iterator的remove封装了ArrayList的remove并在之后expectedModCount = modCount避免了ConcurrentModificationException
 之后要完成的事情：
 1.ConcurrentModificationException异常分析 
