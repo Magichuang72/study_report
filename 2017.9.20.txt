@@ -1,0 +1,25 @@
+今天完成的事情：
+1.集团规约学习：
+a.【强制】使用集合转数组的方法，必须使用集合的toArray(T[] array)，传入的是类型完全一样的数组，大小就是list.size()。
+反例：直接使用toArray无参方法存在问题，此方法返回值只能是Object[]类，若强转其它类型数组将出现ClassCastException错误。
+正例：
+
+List<String> list = new ArrayList<String>(2);
+list.add("guan");
+list.add("bao");
+
+String[] array = new String[list.size()];
+array = list.toArray(array);
+
+toArray（）方法在无参时返回Object数组，有入参时，若入参length小于list的size则重新new一个等size的新数组，若大于size，则copy后多余的置null。
+
+b.【强制】使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。
+说明：asList的返回对象是一个Arrays内部类，并没有实现集合的修改方法。Arrays.asList体现的是适配器模式，只是转换接口，后台的数据仍是数组。
+本质是一个内部arraylist类中的数组进行操作，只能get不能取add，remove等。但是可以用set（）方法改变值。
+
+c.必须回收自定义的ThreadLocal变量，尤其在线程池场景下，线程经常会被复用，如果不清理自定义的 ThreadLocal变量，可能会影响后续业务逻辑和造成内存泄露等问题。尽量在代理中使用try-finally块进行回收。
+
+ThreadLocal相关知识点：其实就是通过Thread内部维护一个ThreadLocalMap来实现变量线程私有化。需要注意的是Entry为弱引用。其中只有在每次set，get的时候才会对entry做key==null的判断，从而释放内存，所以可能使大对象在内存中存活很长一段时间，从而占用内存。所以，我们在使用完ThreadLocal里的对象后最好能手动remove一下，或者至少调用下ThreadLocal.set(null)。因为由于线程池对线程的调度，一个线程可能是长期存活对象，从而导致一直有threadLocalMap的强引用，导致内存泄露。（这些都是目前的理解之后还要加深理解）
+
+之后要完成的事情：
+1.ConcurrentModificationException异常分析 
